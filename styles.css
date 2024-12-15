@@ -51,11 +51,17 @@ h1 {
     color: #d7dadc;
     text-transform: uppercase;
     pointer-events: none;
+    opacity: 1;
+    -webkit-appearance: none;
+    -webkit-text-fill-color: currentColor;
 }
 
 .letter-input.revealed {
     background-color: #6aaa64; /* Brighter green for better visibility */
     border-color: #6aaa64;
+    opacity: 1;
+    -webkit-appearance: none;
+    -webkit-text-fill-color: #ffffff;
 }
 
 .letter-input.correct {
