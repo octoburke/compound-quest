@@ -40,10 +40,10 @@ h1 {
 }
 
 .letter-input {
-    width: 25px;
-    height: 25px;
-    margin: 0 1px;
-    font-size: 0.9em;
+    width: 35px;
+    height: 35px;
+    margin: 0 5px;
+    font-size: 1em;
     text-align: center;
     border: 2px solid #3a3a3c;
     border-radius: 5px;
