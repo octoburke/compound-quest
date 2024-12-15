@@ -35,14 +35,15 @@ h1 {
 #partial-word {
     display: flex;
     justify-content: center;
+    flex-wrap: wrap;
     margin-bottom: 10px;
 }
 
 .letter-input {
-    width: 35px;
-    height: 35px;
-    margin: 0 3px;
-    font-size: 1.2em;
+    width: 30px;
+    height: 30px;
+    margin: 0 2px;
+    font-size: 1em;
     text-align: center;
     border: 2px solid #3a3a3c;
     border-radius: 5px;
@@ -66,23 +67,27 @@ h1 {
     display: flex;
     justify-content: center;
     margin-bottom: 5px;
+    flex-wrap: wrap;
 }
 
 .keyboard-row button {
-    width: 30px;
-    height: 45px;
-    margin: 0 3px;
-    font-size: 0.9em;
+    width: 28px;
+    height: 40px;
+    margin: 0 2px;
+    font-size: 0.8em;
     border: none;
     border-radius: 5px;
     background-color: #818384;
     color: #d7dadc;
     cursor: pointer;
     text-transform: uppercase;
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
 
 .keyboard-row button.wide {
-    width: 60px;
+    width: 56px;
 }
 
 .keyboard-row button:hover {
@@ -114,7 +119,7 @@ h1 {
     background: #121213;
     padding: 20px;
     border-radius: 10px;
-    text-align: left;
+    text-align: center;
     color: #d7dadc;
     width: 90%;
     max-width: 300px;
