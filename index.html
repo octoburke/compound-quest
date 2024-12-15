@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Word Guessing Game</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+</head>
+<body>
+    <div id="app">
+        <div id="game-container">
+            <h1>Word Quest</h1>
+            <div id="definition">{{ currentWord.definition }}</div>
+            <div id="partial-word" v-html="partialWord"></div>
+            <div class="button-group">
+                <button id="reveal-letter" class="reveal-button" @click="handleRevealLetter">Hint</button>
+            </div>
+            <div id="keyboard">
+                <div class="keyboard-row">
+                    <button v-for="key in ['q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p']" :key="key" @click="handleVirtualKeyPress(key)">{{ key }}</button>
+                </div>
+                <div class="keyboard-row">
+                    <button v-for="key in ['a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l']" :key="key" @click="handleVirtualKeyPress(key)">{{ key }}</button>
+                </div>
+                <div class="keyboard-row">
+                    <button class="wide" @click="handleVirtualKeyPress('Backspace')">⌫</button>
+                    <button v-for="key in ['z', 'x', 'c', 'v', 'b', 'n', 'm']" :key="key" @click="handleVirtualKeyPress(key)">{{ key }}</button>
+                    <button class="wide" @click="handleVirtualKeyPress('Enter')">↵</button>
+                </div>
+            </div>
+        </div>
+        
+        <div id="results-modal" class="modal" :class="{ show: showModal }">
+            <div class="modal-content">
+                <h2>Nice Job! 🎉</h2>
+                <div id="results-text" v-html="resultsText"></div>
+                <div class="modal-buttons">
+                    <button id="copy-results" class="submit-button" @click="copyResults">Copy Results 📋</button>
+                    <button id="next-word" class="reveal-button" @click="loadNewWord">Next Word ➡️</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="about-modal" class="modal" :class="{ show: showAboutModal }">
+            <div class="modal-content">
+                <h2>About This Game</h2>
+                <p>This game was invented and created by AI.</p>
+                <p>
+                Microsoft Copilot was used to generate the idea for this game. The prompt was to come up with simple word games similar to Wordle. I picked the "Reverse Dictionary" idea from the provided options.</p>
+                <p>
+                GitHub Copilot was used to create the game. The game was built over the course of an afternoon primarily with the Copilot Edits feature.
+                </p>
+                <div class="modal-buttons">
+                    <button class="submit-button" @click="showAboutModal = false">Close</button>
+                </div>
+            </div>
+        </div>
+
+        <footer>
+            <button id="ai-info-button" @click="showAboutModal = true">This was built by AI</button>
+        </footer>
+    </div>
+    <script src="scripts.js"></script>
+</body>
+</html>
