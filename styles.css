@@ -54,8 +54,8 @@ h1 {
 }
 
 .letter-input.revealed {
-    background-color: #538d4e;
-    border-color: #538d4e;
+    background-color: #6aaa64; /* Brighter green for better visibility */
+    border-color: #6aaa64;
 }
 
 .letter-input.correct {
@@ -147,6 +147,19 @@ h1 {
 }
 
 .submit-button:active, .reveal-button:active {
+    background-color: #d7dadc;
+    color: #121213;
+}
+
+.reveal-button {
+    background-color: #818384; /* Grey color for the hint button */
+}
+
+.reveal-button:hover {
+    background-color: #a4a4a5;
+}
+
+.reveal-button:active {
     background-color: #d7dadc;
     color: #121213;
 }
