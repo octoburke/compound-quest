@@ -2,8 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1, minimum-scale=1">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1, minimum-scale=1, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, minimum-scale=1, user-scalable=no">
     <title>Word Guessing Game</title>
     <link rel="stylesheet" href="styles.css">
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
@@ -14,9 +13,7 @@
             <h1>Word Quest</h1>
             <div id="definition">{{ currentWord.definition }}</div>
             <div id="partial-word" v-html="partialWord"></div>
-            <div class="button-group">
-                <button id="reveal-letter" class="reveal-button" @click="handleRevealLetter">Hint</button>
-            </div>
+            
             <div id="keyboard">
                 <div class="keyboard-row">
                     <button v-for="key in ['q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p']" :key="key" @click="handleVirtualKeyPress(key)">{{ key }}</button>
@@ -27,14 +24,19 @@
                 <div class="keyboard-row">
                     <button class="wide" @click="handleVirtualKeyPress('Backspace')">⌫</button>
                     <button v-for="key in ['z', 'x', 'c', 'v', 'b', 'n', 'm']" :key="key" @click="handleVirtualKeyPress(key)">{{ key }}</button>
-                    <button class="wide" @click="handleVirtualKeyPress('Enter')">↵</button>
                 </div>
+            </div>
+
+            <div class="action-buttons">
+                <button class="game-button hint" @click="handleRevealLetter" :disabled="remainingLetters <= 1">Hint</button>
+                <button class="game-button submit" @click="handleVirtualKeyPress('Enter')">Submit</button>
             </div>
         </div>
         
         <div id="results-modal" class="modal" :class="{ show: showModal }">
             <div class="modal-content">
                 <h2>Nice Job! 🎉</h2>
+                <div class="answer-reveal">The word was: <span class="answer-word">{{ currentWord.word }}</span></div>
                 <div id="results-text" v-html="resultsText"></div>
                 <div class="modal-buttons">
                     <button id="copy-results" class="submit-button" @click="copyResults">Copy Results 📋</button>

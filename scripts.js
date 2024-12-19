@@ -6,7 +6,7 @@ const app = createApp({
         const words = ref([]);
         const currentWord = reactive({ word: '', definition: '' });
         const userInput = ref([]);
-        const revealedLetters = ref(new Set());
+        const revealedLetters = ref(0);
         const revealCount = ref(0);
         const guessCount = ref(0);
         const message = ref('');
@@ -19,25 +19,31 @@ const app = createApp({
         // Computed properties
         const allFilled = computed(() => {
             return [...currentWord.word].every((_, index) => {
-                return revealedLetters.value.has(index) || (userInput.value[index] !== undefined);
+                return revealedLetters.value > index || (userInput.value[index] !== undefined);
             });
         });
 
+        const remainingLetters = computed(() => {
+            return currentWord.word.length - revealedLetters.value;
+        });
+
         // Load a new word
-        const loadNewWord = () => {
-            if (words.value.length > 0) {
+        const loadNewWord = async () => {
+            try {
+                const response = await fetch('/api/words');
+                const data = await response.json();
+                
                 message.value = '';
-                const randomWord = words.value[Math.floor(Math.random() * words.value.length)];
-                currentWord.word = randomWord.word;
-                currentWord.definition = randomWord.definition;
-                revealedLetters.value.clear();
+                currentWord.word = data.word;
+                currentWord.definition = data.definition;
+                revealedLetters.value = 0;
                 userInput.value = new Array(currentWord.word.length);
                 revealCount.value = 0;
                 guessCount.value = 0;
                 displayPartialWord();
-                showModal.value = false; // Hide the modal
-            } else {
-                console.error('No words available');
+                showModal.value = false;
+            } catch (error) {
+                console.error('Error loading word:', error);
             }
         };
 
@@ -72,7 +78,7 @@ const app = createApp({
         const handleLetterInput = (key) => {
             // Find first empty position in userInput array that isn't revealed
             const index = userInput.value.findIndex((val, idx) => 
-                val === undefined && !revealedLetters.value.has(idx)
+                val === undefined && idx >= revealedLetters.value
             );
             
             if (index !== -1) {
@@ -85,7 +91,7 @@ const app = createApp({
         // Check the guessed word
         const checkWord = () => {
             const fullGuess = [...currentWord.word].map((letter, index) => {
-                if (revealedLetters.value.has(index)) {
+                if (index < revealedLetters.value) {
                     return letter.toLowerCase();
                 }
                 return userInput.value[index]?.toLowerCase() || '';
@@ -108,7 +114,7 @@ const app = createApp({
                 shakeLetters().then(() => {
                     setTimeout(() => {
                         userInput.value = userInput.value.map((_, i) => 
-                            revealedLetters.value.has(i) ? currentWord.word[i].toLowerCase() : undefined
+                            i < revealedLetters.value ? currentWord.word[i].toLowerCase() : undefined
                         );
                         displayPartialWord();
                     }, 500);
@@ -118,16 +124,9 @@ const app = createApp({
 
         // Handle reveal letter button click
         const handleRevealLetter = () => {
-            revealRandomLetter();
-            revealCount.value++;
-            displayPartialWord();
-            
-            const firstEmptyInput = document.querySelector('.letter-input:not([disabled])');
-            if (firstEmptyInput) firstEmptyInput.focus();
-
-            // Check if the game is over
-            if (revealedLetters.value.size === currentWord.word.length) {
-                endRound();
+            if (revealedLetters.value < currentWord.word.length) {
+                revealedLetters.value++;
+                displayPartialWord();
             }
         };
 
@@ -136,7 +135,7 @@ const app = createApp({
             const inputs = document.querySelectorAll('.letter-input');
             inputs.forEach(input => input.disabled = true);
             showMessage(`Round Over! The word was: ${currentWord.word}`, 'error');
-            [...currentWord.word].forEach((_, index) => revealedLetters.value.add(index));
+            revealedLetters.value = currentWord.word.length;
             displayPartialWord();
             showResults();
         };
@@ -170,28 +169,11 @@ const app = createApp({
             }
         };
 
-        // Reveal a random letter
-        const revealRandomLetter = () => {
-            const word = currentWord.word.toLowerCase();
-            const hiddenLetters = [...word].filter((_, index) => !revealedLetters.value.has(index));
-            
-            if (hiddenLetters.length > 0) {
-                let letterFound = false;
-                while (!letterFound && revealedLetters.value.size < word.length) {
-                    const randomIndex = Math.floor(Math.random() * word.length);
-                    if (!revealedLetters.value.has(randomIndex)) {
-                        revealedLetters.value.add(randomIndex);
-                        letterFound = true;
-                    }
-                }
-            }
-        };
-
         // Display the partial word
         const displayPartialWord = () => {
             const wordDisplay = [...currentWord.word].map((letter, index) => {
-                const value = userInput.value[index] || (revealedLetters.value.has(index) ? letter : '');
-                const disabled = revealedLetters.value.has(index);
+                const value = index < revealedLetters.value ? letter : (userInput.value[index] || '');
+                const disabled = index < revealedLetters.value;
                 return `<input 
                     type="text" 
                     maxlength="1" 
@@ -223,7 +205,7 @@ const app = createApp({
             const input = e.target;
             const index = parseInt(input.dataset.index);
             
-            if (revealedLetters.value.has(index)) {
+            if (index < revealedLetters.value) {
                 e.preventDefault();
                 return;
             }
@@ -234,7 +216,7 @@ const app = createApp({
                 userInput.value[index] = value;
                 
                 let nextIndex = index + 1;
-                while (nextIndex < currentWord.word.length && revealedLetters.value.has(nextIndex)) {
+                while (nextIndex < currentWord.word.length && nextIndex < revealedLetters.value) {
                     nextIndex++;
                 }
                 
@@ -255,7 +237,7 @@ const app = createApp({
             const input = e.target;
             const index = parseInt(input.dataset.index);
 
-            if (revealedLetters.value.has(index)) {
+            if (index < revealedLetters.value) {
                 e.preventDefault();
                 return;
             }
@@ -278,14 +260,14 @@ const app = createApp({
         // Update submit button state
         const updateSubmitButton = () => {
             const allFilledValue = [...currentWord.word].every((_, index) => {
-                return revealedLetters.value.has(index) || (userInput.value[index] !== undefined);
+                return index < revealedLetters.value || (userInput.value[index] !== undefined);
             });
             allFilled.value = allFilledValue;
         };
 
-        // Copy results to clipboard
+        // Update copyResults method to only share emojis and stats
         const copyResults = () => {
-            const textToShare = `Word Quest 🎯\n${resultsText.value}\nGuesses: ${guessCount.value}\nReveals: ${revealCount.value}\n${getEmojiResults()}`;
+            const textToShare = `Word Quest 🎯\nGuesses: ${guessCount.value}\nReveals: ${revealCount.value}\n${getEmojiResults()}`;
             
             navigator.clipboard.writeText(textToShare)
                 .then(() => {
@@ -298,7 +280,7 @@ const app = createApp({
         // Get emoji results
         const getEmojiResults = () => {
             const emojis = [...currentWord.word].map((letter, index) => {
-                if (revealedLetters.value.has(index)) {
+                if (index < revealedLetters.value) {
                     return '🟨'; // Yellow square for revealed letters
                 } else {
                     return '🟩'; // Green square for correctly guessed letters
@@ -313,14 +295,8 @@ const app = createApp({
             showModal.value = true;
         };
 
-        // Fetch words from JSON file
-        fetch('words.json')
-            .then(response => response.json())
-            .then(data => {
-                words.value = data.words;
-                loadNewWord();
-            })
-            .catch(error => console.error('Error loading words:', error));
+        // Initialize the game
+        loadNewWord();
 
         return {
             revealCount,
@@ -333,6 +309,7 @@ const app = createApp({
             showModal,
             showAboutModal,
             allFilled,
+            remainingLetters,
             loadNewWord,
             handleVirtualKeyPress,
             checkWord,

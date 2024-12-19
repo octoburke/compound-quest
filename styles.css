@@ -9,6 +9,10 @@ body {
     margin: 0;
     padding: 10px;
     box-sizing: border-box;
+    touch-action: manipulation;
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
 }
 
 #game-container {
@@ -54,6 +58,7 @@ h1 {
     opacity: 1;
     -webkit-appearance: none;
     -webkit-text-fill-color: currentColor;
+    touch-action: manipulation;
 }
 
 .letter-input.revealed {
@@ -77,10 +82,10 @@ h1 {
 }
 
 .keyboard-row button {
-    width: 28px;
-    height: 40px;
-    margin: 0 2px;
-    font-size: 0.8em;
+    width: 32px;
+    height: 45px;
+    margin: 0 3px;
+    font-size: 1em;
     border: none;
     border-radius: 5px;
     background-color: #818384;
@@ -93,7 +98,17 @@ h1 {
 }
 
 .keyboard-row button.wide {
-    width: 56px;
+    width: 65px;
+    background-color: #818384;
+}
+
+.keyboard-row button.enter {
+    background-color: #538d4e;
+    font-size: 0.9em;
+}
+
+.keyboard-row button.enter:hover {
+    background-color: #6aaa64;
 }
 
 .keyboard-row button:hover {
@@ -170,8 +185,43 @@ h1 {
     color: #121213;
 }
 
+.action-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.game-button {
+    padding: 12px 24px;
+    font-size: 1em;
+    border: none;
+    border-radius: 5px;
+    color: #d7dadc;
+    cursor: pointer;
+    text-transform: uppercase;
+    min-width: 100px;
+}
+
+.game-button.submit {
+    background-color: #538d4e;
+}
+
+.game-button.submit:hover {
+    background-color: #6aaa64;
+}
+
+.game-button.hint {
+    background-color: #818384;
+}
+
+.game-button.hint:hover {
+    background-color: #a4a4a5;
+}
+
+/* Remove the old button group styles */
 .button-group {
-    margin-bottom: 10px;
+    display: none;
 }
 
 footer {
@@ -198,4 +248,29 @@ footer {
 
 .shake {
     animation: shake 0.5s;
+}
+
+#keyboard {
+    margin-bottom: 0;
+}
+
+.keyboard-row:first-child {
+    padding-right: 0;
+}
+
+.answer-reveal {
+    margin: 15px 0;
+    font-size: 1.1em;
+}
+
+.answer-word {
+    color: #6aaa64;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+.game-button.hint:disabled {
+    background-color: #3a3a3c;
+    opacity: 0.5;
+    cursor: not-allowed;
 }
