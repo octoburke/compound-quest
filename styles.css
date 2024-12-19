@@ -59,6 +59,7 @@ h1 {
     -webkit-appearance: none;
     -webkit-text-fill-color: currentColor;
     touch-action: manipulation;
+    display: inline-block;
 }
 
 .letter-input.revealed {
@@ -72,6 +73,15 @@ h1 {
 .letter-input.correct {
     background-color: #3a3a3c;
     border-color: #3a3a3c;
+}
+
+/* Remove these classes */
+.letter-box,
+.letter-card,
+.letter-card.flip,
+.letter-front,
+.letter-back {
+    display: none;
 }
 
 .keyboard-row {

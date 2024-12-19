@@ -1,17 +1,28 @@
 const { createApp, ref, reactive, computed } = Vue;
 
+function createPartialWordHTML(word, revealedLetters) {
+    return word.split('').map((letter, index) => {
+        const isRevealed = revealedLetters.has(index);
+        return `<input type="text" 
+            class="letter-input ${isRevealed ? 'revealed' : ''}" 
+            value="${isRevealed ? letter : ''}" 
+            data-index="${index}"
+            ${isRevealed ? 'disabled' : ''}>`;
+    }).join('');
+}
+
 const app = createApp({
     setup() {
         // Reactive state variables
         const words = ref([]);
         const currentWord = reactive({ word: '', definition: '' });
         const userInput = ref([]);
-        const revealedLetters = ref(0);
+        const revealedLetters = ref(new Set());
         const revealCount = ref(0);
         const guessCount = ref(0);
         const message = ref('');
         const messageType = ref('');
-        const partialWord = ref('');
+        const partialWord = computed(() => createPartialWordHTML(currentWord.word, revealedLetters.value));
         const resultsText = ref('');
         const showModal = ref(false);
         const showAboutModal = ref(false);
@@ -19,12 +30,12 @@ const app = createApp({
         // Computed properties
         const allFilled = computed(() => {
             return [...currentWord.word].every((_, index) => {
-                return revealedLetters.value > index || (userInput.value[index] !== undefined);
+                return revealedLetters.value.has(index) || (userInput.value[index] !== undefined);
             });
         });
 
         const remainingLetters = computed(() => {
-            return currentWord.word.length - revealedLetters.value;
+            return currentWord.word.length - revealedLetters.value.size;
         });
 
         // Load a new word
@@ -36,11 +47,10 @@ const app = createApp({
                 message.value = '';
                 currentWord.word = data.word;
                 currentWord.definition = data.definition;
-                revealedLetters.value = 0;
+                revealedLetters.value = new Set();
                 userInput.value = new Array(currentWord.word.length);
                 revealCount.value = 0;
                 guessCount.value = 0;
-                displayPartialWord();
                 showModal.value = false;
             } catch (error) {
                 console.error('Error loading word:', error);
@@ -78,12 +88,11 @@ const app = createApp({
         const handleLetterInput = (key) => {
             // Find first empty position in userInput array that isn't revealed
             const index = userInput.value.findIndex((val, idx) => 
-                val === undefined && idx >= revealedLetters.value
+                val === undefined && !revealedLetters.value.has(idx)
             );
             
             if (index !== -1) {
                 userInput.value[index] = key;
-                displayPartialWord(); // Refresh the display
                 updateSubmitButton();
             }
         };
@@ -91,7 +100,7 @@ const app = createApp({
         // Check the guessed word
         const checkWord = () => {
             const fullGuess = [...currentWord.word].map((letter, index) => {
-                if (index < revealedLetters.value) {
+                if (revealedLetters.value.has(index)) {
                     return letter.toLowerCase();
                 }
                 return userInput.value[index]?.toLowerCase() || '';
@@ -114,9 +123,8 @@ const app = createApp({
                 shakeLetters().then(() => {
                     setTimeout(() => {
                         userInput.value = userInput.value.map((_, i) => 
-                            i < revealedLetters.value ? currentWord.word[i].toLowerCase() : undefined
+                            revealedLetters.value.has(i) ? currentWord.word[i].toLowerCase() : undefined
                         );
-                        displayPartialWord();
                     }, 500);
                 });
             }
@@ -124,9 +132,16 @@ const app = createApp({
 
         // Handle reveal letter button click
         const handleRevealLetter = () => {
-            if (revealedLetters.value < currentWord.word.length) {
-                revealedLetters.value++;
-                displayPartialWord();
+            if (remainingLetters.value <= 1) return;
+            
+            // Find the first unrevealed letter
+            const firstUnrevealed = [...currentWord.word].findIndex((_, index) => 
+                !revealedLetters.value.has(index)
+            );
+            
+            if (firstUnrevealed !== -1) {
+                revealedLetters.value.add(firstUnrevealed);
+                revealCount.value++;
             }
         };
 
@@ -135,8 +150,7 @@ const app = createApp({
             const inputs = document.querySelectorAll('.letter-input');
             inputs.forEach(input => input.disabled = true);
             showMessage(`Round Over! The word was: ${currentWord.word}`, 'error');
-            revealedLetters.value = currentWord.word.length;
-            displayPartialWord();
+            currentWord.word.split('').forEach((_, index) => revealedLetters.value.add(index));
             showResults();
         };
 
@@ -169,43 +183,12 @@ const app = createApp({
             }
         };
 
-        // Display the partial word
-        const displayPartialWord = () => {
-            const wordDisplay = [...currentWord.word].map((letter, index) => {
-                const value = index < revealedLetters.value ? letter : (userInput.value[index] || '');
-                const disabled = index < revealedLetters.value;
-                return `<input 
-                    type="text" 
-                    maxlength="1" 
-                    class="letter-input ${disabled ? 'revealed' : ''}" 
-                    value="${value}"
-                    readonly
-                    inputmode="none"
-                    ${disabled ? 'disabled' : ''}
-                    data-index="${index}"
-                >`;
-            }).join('');
-            
-            partialWord.value = wordDisplay;
-
-            const inputs = document.querySelectorAll('.letter-input');
-            inputs.forEach(input => {
-                input.addEventListener('input', handleLetterInputEvent);
-                input.addEventListener('keydown', handleLetterKeydownEvent);
-            });
-
-            const firstEmptyInput = document.querySelector('input:not([disabled]):not([readonly])');
-            if (firstEmptyInput) {
-                setTimeout(() => firstEmptyInput.focus(), 0);
-            }
-        };
-
         // Handle letter input event
         const handleLetterInputEvent = (e) => {
             const input = e.target;
             const index = parseInt(input.dataset.index);
             
-            if (index < revealedLetters.value) {
+            if (revealedLetters.value.has(index)) {
                 e.preventDefault();
                 return;
             }
@@ -216,7 +199,7 @@ const app = createApp({
                 userInput.value[index] = value;
                 
                 let nextIndex = index + 1;
-                while (nextIndex < currentWord.word.length && nextIndex < revealedLetters.value) {
+                while (nextIndex < currentWord.word.length && revealedLetters.value.has(nextIndex)) {
                     nextIndex++;
                 }
                 
@@ -237,7 +220,7 @@ const app = createApp({
             const input = e.target;
             const index = parseInt(input.dataset.index);
 
-            if (index < revealedLetters.value) {
+            if (revealedLetters.value.has(index)) {
                 e.preventDefault();
                 return;
             }
@@ -260,7 +243,7 @@ const app = createApp({
         // Update submit button state
         const updateSubmitButton = () => {
             const allFilledValue = [...currentWord.word].every((_, index) => {
-                return index < revealedLetters.value || (userInput.value[index] !== undefined);
+                return revealedLetters.value.has(index) || (userInput.value[index] !== undefined);
             });
             allFilled.value = allFilledValue;
         };
@@ -280,7 +263,7 @@ const app = createApp({
         // Get emoji results
         const getEmojiResults = () => {
             const emojis = [...currentWord.word].map((letter, index) => {
-                if (index < revealedLetters.value) {
+                if (revealedLetters.value.has(index)) {
                     return '🟨'; // Yellow square for revealed letters
                 } else {
                     return '🟩'; // Green square for correctly guessed letters
