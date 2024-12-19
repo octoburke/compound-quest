@@ -1,8 +1,10 @@
 const { createApp, ref, reactive, computed } = Vue;
 
 function createPartialWordHTML(word, revealedLetters) {
-    return word.split('').map((letter, index) => {
-        const isRevealed = revealedLetters.has(index);
+    const length = word?.length || 5; // Default to 5 boxes if no word
+    return Array(length).fill('_').map((_, index) => {
+        const isRevealed = word && revealedLetters.has(index);
+        const letter = word?.[index] || '';
         return `<input type="text" 
             class="letter-input ${isRevealed ? 'revealed' : ''}" 
             value="${isRevealed ? letter : ''}" 
@@ -59,6 +61,8 @@ const app = createApp({
 
         // Handle virtual keyboard key press
         const handleVirtualKeyPress = (key) => {
+            console.log('Virtual key pressed:', key); // Debug logging
+            
             if (key === 'Backspace') {
                 handleBackspace();
             } else if (key === 'Enter') {
@@ -66,7 +70,16 @@ const app = createApp({
                     checkWord();
                 }
             } else if (/^[a-z]$/.test(key)) {
-                handleLetterInput(key);
+                // Get all input elements and find first empty one
+                const inputs = document.querySelectorAll('.letter-input:not([disabled])');
+                const emptyInput = [...inputs].find(input => !input.value);
+                
+                if (emptyInput) {
+                    const index = parseInt(emptyInput.dataset.index);
+                    emptyInput.value = key;
+                    userInput.value[index] = key;
+                    updateSubmitButton();
+                }
             }
         };
 
@@ -86,13 +99,17 @@ const app = createApp({
 
         // Handle letter input
         const handleLetterInput = (key) => {
-            // Find first empty position in userInput array that isn't revealed
             const index = userInput.value.findIndex((val, idx) => 
                 val === undefined && !revealedLetters.value.has(idx)
             );
             
             if (index !== -1) {
                 userInput.value[index] = key;
+                // Update the actual input element
+                const input = document.querySelector(`.letter-input[data-index="${index}"]`);
+                if (input) {
+                    input.value = key;
+                }
                 updateSubmitButton();
             }
         };
@@ -272,10 +289,21 @@ const app = createApp({
             return emojis.join('');
         };
 
+        const clearInputs = () => {
+            const inputs = document.querySelectorAll('.letter-input:not([disabled])');
+            inputs.forEach(input => {
+                input.value = '';
+            });
+            userInput.value = userInput.value.map((_, i) => 
+                revealedLetters.value.has(i) ? currentWord.word[i].toLowerCase() : undefined
+            );
+        };
+
         // Show results in modal
         const showResults = () => {
             resultsText.value = getEmojiResults();
             showModal.value = true;
+            clearInputs(); // Clear input values when showing success modal
         };
 
         // Initialize the game

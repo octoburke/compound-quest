@@ -88,14 +88,16 @@ h1 {
     display: flex;
     justify-content: center;
     margin-bottom: 5px;
-    flex-wrap: wrap;
+    flex-wrap: nowrap; /* Prevent wrapping */
+    max-width: 100%;
+    padding: 0 2px; /* Add small padding to prevent edge touching */
 }
 
 .keyboard-row button {
-    width: 32px;
+    width: 30px; /* Slightly smaller width */
     height: 45px;
-    margin: 0 3px;
-    font-size: 1em;
+    margin: 0 2px; /* Reduce margin */
+    font-size: 0.9em; /* Slightly smaller font */
     border: none;
     border-radius: 5px;
     background-color: #818384;
@@ -108,17 +110,14 @@ h1 {
 }
 
 .keyboard-row button.wide {
-    width: 65px;
+    width: 60px; /* Adjust wide button width */
     background-color: #818384;
 }
 
-.keyboard-row button.enter {
-    background-color: #538d4e;
-    font-size: 0.9em;
-}
-
+/* Remove or comment out these styles */
+.keyboard-row button.enter,
 .keyboard-row button.enter:hover {
-    background-color: #6aaa64;
+    display: none;
 }
 
 .keyboard-row button:hover {
@@ -128,6 +127,8 @@ h1 {
 .keyboard-row button:active {
     background-color: #d7dadc;
     color: #121213;
+    transform: scale(0.95);
+    transition: transform 0.1s;
 }
 
 .modal {
@@ -262,6 +263,9 @@ footer {
 
 #keyboard {
     margin-bottom: 0;
+    width: 100%;
+    max-width: 400px;
+    margin: 0 auto;
 }
 
 .keyboard-row:first-child {
