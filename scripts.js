@@ -9,6 +9,8 @@ function createPartialWordHTML(word, revealedLetters) {
             class="letter-input ${isRevealed ? 'revealed' : ''}" 
             value="${isRevealed ? letter : ''}" 
             data-index="${index}"
+            readonly
+            inputmode="none"
             ${isRevealed ? 'disabled' : ''}>`;
     }).join('');
 }
