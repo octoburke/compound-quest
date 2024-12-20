@@ -31,6 +31,33 @@ const app = createApp({
         const showModal = ref(false);
         const showAboutModal = ref(false);
 
+        // Remove score and streak refs
+        const timeLeft = ref(60);
+        const timer = ref(null);
+
+        // Add utility functions
+        const formatTime = (seconds) => {
+            return `${Math.floor(seconds / 60)}:${(seconds % 60).toString().padStart(2, '0')}`;
+        };
+
+        const startTimer = () => {
+            if (!timer.value) {
+                timer.value = setInterval(() => {
+                    timeLeft.value--;
+                    if (timeLeft.value <= 0) {
+                        clearInterval(timer.value);
+                        endRound();
+                    }
+                }, 1000);
+            }
+        };
+
+        // Add skip handler
+        const handleSkip = () => {
+            timeLeft.value = Math.max(0, timeLeft.value - 5); // Reduce by 5 seconds instead of 10
+            loadNewWord();
+        };
+
         // Computed properties
         const allFilled = computed(() => {
             return [...currentWord.word].every((_, index) => {
@@ -53,8 +80,6 @@ const app = createApp({
                 currentWord.definition = data.definition;
                 revealedLetters.value = new Set();
                 userInput.value = new Array(currentWord.word.length);
-                revealCount.value = 0;
-                guessCount.value = 0;
                 showModal.value = false;
             } catch (error) {
                 console.error('Error loading word:', error);
@@ -63,7 +88,9 @@ const app = createApp({
 
         // Handle virtual keyboard key press
         const handleVirtualKeyPress = (key) => {
-            console.log('Virtual key pressed:', key); // Debug logging
+            if (!timer.value && /^[a-z]$/.test(key)) {
+                startTimer(); // Start timer on first letter
+            }
             
             if (key === 'Backspace') {
                 handleBackspace();
@@ -137,15 +164,51 @@ const app = createApp({
             guessCount.value++;
 
             if (fullGuess === word) {
-                showResults();
-            } else {
-                shakeLetters().then(() => {
+                // Start new timer only on correct guess
+                startTimer();
+                // No points or streak tracking
+                
+                // Celebrate animation
+                const inputs = document.querySelectorAll('.letter-input');
+                inputs.forEach((input, i) => {
                     setTimeout(() => {
-                        userInput.value = userInput.value.map((_, i) => 
-                            revealedLetters.value.has(i) ? currentWord.word[i].toLowerCase() : undefined
-                        );
-                    }, 500);
+                        input.classList.add('celebrate');
+                    }, i * 100);
                 });
+
+                // Clear inputs before loading next word
+                setTimeout(() => {
+                    inputs.forEach(input => {
+                        input.classList.remove('celebrate');
+                        input.value = '';
+                        input.disabled = false;
+                    });
+                    userInput.value = new Array(currentWord.word.length).fill(undefined);
+                    revealedLetters.value = new Set();
+                    
+                    // Load next word after clearing
+                    loadNewWord();
+                }, 1500);
+            } else {
+                // Check each letter and mark correct ones
+                [...fullGuess].forEach((letter, index) => {
+                    const input = document.querySelector(`.letter-input[data-index="${index}"]`);
+                    if (letter === word[index]) {
+                        input.classList.add('correct-position');
+                        input.disabled = true;
+                        revealedLetters.value.add(index);
+                    }
+                });
+                
+                // Clear only incorrect letters
+                userInput.value = userInput.value.map((val, i) => {
+                    if (word[i] === val?.toLowerCase()) {
+                        return val;
+                    }
+                    return undefined;
+                });
+
+                shakeLetters();
             }
         };
 
@@ -303,9 +366,11 @@ const app = createApp({
 
         // Show results in modal
         const showResults = () => {
-            resultsText.value = getEmojiResults();
-            showModal.value = true;
-            clearInputs(); // Clear input values when showing success modal
+            if (timeLeft.value <= 0) {
+                resultsText.value = getEmojiResults();
+                showModal.value = true;
+                clearInputs();
+            }
         };
 
         // Initialize the game
@@ -327,7 +392,10 @@ const app = createApp({
             handleVirtualKeyPress,
             checkWord,
             handleRevealLetter,
-            copyResults
+            copyResults,
+            handleSkip,
+            timeLeft,
+            formatTime
         };
     }
 });

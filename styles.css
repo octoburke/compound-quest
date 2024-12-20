@@ -18,12 +18,15 @@ body {
 #game-container {
     text-align: center;
     width: 100%;
-    max-width: 400px;
+    max-width: 500px; /* Increased to give more room */
     display: flex;
     flex-direction: column;
     justify-content: space-between;
     height: 100%;
     position: relative;
+    margin: 0 auto;
+    padding: 0 10px;
+    box-sizing: border-box;
 }
 
 h1 {
@@ -41,6 +44,8 @@ h1 {
     justify-content: center;
     flex-wrap: wrap;
     margin-bottom: 10px;
+    min-height: 45px; /* Add minimum height to prevent layout shift */
+    margin: 10px auto 20px;
 }
 
 .letter-input {
@@ -77,6 +82,14 @@ h1 {
 .letter-input.correct {
     background-color: #3a3a3c;
     border-color: #3a3a3c;
+    animation: correct-pop 0.3s ease-in-out;
+}
+
+.letter-input.correct-position {
+    background-color: #6aaa64;
+    border-color: #6aaa64;
+    color: white;
+    -webkit-text-fill-color: white;
 }
 
 /* Remove these classes */
@@ -91,17 +104,24 @@ h1 {
 .keyboard-row {
     display: flex;
     justify-content: center;
-    margin-bottom: 5px;
+    margin-bottom: 6px;
     flex-wrap: nowrap; /* Prevent wrapping */
-    max-width: 100%;
+    gap: 4px; /* Use gap instead of margins for consistent spacing */
+    width: 100%;
     padding: 0 2px; /* Add small padding to prevent edge touching */
+    width: 100%;
+    max-width: 500px;
+    margin: 0 auto 6px;
+    padding: 0;
 }
 
 .keyboard-row button {
-    width: 30px; /* Slightly smaller width */
-    height: 45px;
-    margin: 0 2px; /* Reduce margin */
-    font-size: 0.9em; /* Slightly smaller font */
+    flex: 1; /* Let buttons grow to fill space */
+    min-width: 32px; /* Minimum width for small screens */
+    height: 52px; /* Taller buttons for better touch targets */
+    margin: 0; /* Remove margins, using gap instead */
+    font-size: 1.1em;
+    padding: 0;
     border: none;
     border-radius: 5px;
     background-color: #818384;
@@ -114,7 +134,7 @@ h1 {
 }
 
 .keyboard-row button.wide {
-    width: 60px; /* Adjust wide button width */
+    flex: 1.5; /* Make wide buttons 1.5x the size of regular keys */
     background-color: #818384;
 }
 
@@ -234,6 +254,15 @@ h1 {
     background-color: #a4a4a5;
 }
 
+/* Replace hint styles with skip */
+.game-button.skip {
+    background-color: #818384;
+}
+
+.game-button.skip:hover {
+    background-color: #a4a4a5;
+}
+
 /* Remove the old button group styles */
 .button-group {
     display: none;
@@ -266,10 +295,14 @@ footer {
 }
 
 #keyboard {
-    margin-bottom: 0;
-    width: 100%;
-    max-width: 400px;
+    width: 100vw; /* Full viewport width */
+    max-width: 500px; /* Match container max-width */
     margin: 0 auto;
+    padding: 0 10px;
+    box-sizing: border-box;
+    position: relative;
+    left: 50%;
+    transform: translateX(-50%);
 }
 
 .keyboard-row:first-child {
@@ -297,4 +330,60 @@ footer {
 button, input {
     -webkit-tap-highlight-color: transparent;
     outline: none;
+}
+
+.game-header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.stats {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+    padding: 10px;
+    font-family: 'Press Start 2P', cursive;
+    font-size: 0.8em;
+}
+
+.timer {
+    background: #2a2a2b;
+    padding: 8px 16px;
+    border-radius: 4px;
+}
+
+/* Remove unused styles */
+.score, .streak, .streak-pulse {
+    display: none;
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+    100% { transform: scale(1); }
+}
+
+@keyframes blink {
+    50% { opacity: 0.5; }
+}
+
+@keyframes correct-pop {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.2); background-color: #6aaa64; }
+    100% { transform: scale(1); }
+}
+
+@keyframes celebrate {
+    0% { transform: scale(1); filter: brightness(1); }
+    50% { transform: scale(1.2); filter: brightness(1.5); }
+    100% { transform: scale(1); filter: brightness(1); }
+}
+
+.celebrate {
+    animation: celebrate 1s ease-out;
+    background-color: #6aaa64 !important;
+    border-color: #6aaa64 !important;
+    color: white !important;
 }

@@ -6,11 +6,19 @@
     <title>Word Guessing Game</title>
     <link rel="stylesheet" href="styles.css">
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
 </head>
 <body>
     <div id="app">
         <div id="game-container">
-            <h1>Word Quest</h1>
+            <div class="game-header">
+                <div class="stats">
+                    <div class="timer" :class="{ 'timer-warning': timeLeft <= 10 }">
+                        {{ formatTime(timeLeft) }}
+                    </div>
+                </div>
+                <h1>Word Quest</h1>
+            </div>
             <div id="definition">{{ currentWord.definition }}</div>
             <div id="partial-word" v-html="partialWord"></div>
             
@@ -28,23 +36,11 @@
             </div>
 
             <div class="action-buttons">
-                <button class="game-button hint" @click="handleRevealLetter" :disabled="remainingLetters <= 1">Hint</button>
+                <button class="game-button skip" @click="handleSkip">Skip (-5s)</button>
                 <button class="game-button submit" @click="handleVirtualKeyPress('Enter')">Submit</button>
             </div>
         </div>
         
-        <div id="results-modal" class="modal" :class="{ show: showModal }">
-            <div class="modal-content">
-                <h2>Nice Job! 🎉</h2>
-                <div class="answer-reveal">The word was: <span class="answer-word">{{ currentWord.word }}</span></div>
-                <div id="results-text" v-html="resultsText"></div>
-                <div class="modal-buttons">
-                    <button id="copy-results" class="submit-button" @click="copyResults">Copy Results 📋</button>
-                    <button id="next-word" class="reveal-button" @click="loadNewWord">Next Word ➡️</button>
-                </div>
-            </div>
-        </div>
-
         <div id="about-modal" class="modal" :class="{ show: showAboutModal }">
             <div class="modal-content" style="text-align: left;">
                 <h2>About This Game</h2>
