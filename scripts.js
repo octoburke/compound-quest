@@ -1,5 +1,6 @@
-const { createApp, ref, reactive, computed } = Vue;
+const { createApp, ref, reactive, computed, onMounted } = Vue;
 
+// Add the createPartialWordHTML function before creating the app
 function createPartialWordHTML(word, revealedLetters) {
     const length = word?.length || 5; // Default to 5 boxes if no word
     return Array(length).fill('_').map((_, index) => {
@@ -17,6 +18,10 @@ function createPartialWordHTML(word, revealedLetters) {
 
 const app = createApp({
     setup() {
+        // Add welcome screen state
+        const showWelcome = ref(true);
+        const gameStarted = ref(false);
+
         // Reactive state variables
         const words = ref([]);
         const currentWord = reactive({ word: '', definition: '' });
@@ -31,6 +36,9 @@ const app = createApp({
         const showModal = ref(false);
         const showAboutModal = ref(false);
 
+        // Add streak to state variables
+        const streak = ref(0);
+
         // Remove score and streak refs
         const timeLeft = ref(60);
         const timer = ref(null);
@@ -40,8 +48,9 @@ const app = createApp({
             return `${Math.floor(seconds / 60)}:${(seconds % 60).toString().padStart(2, '0')}`;
         };
 
+        // Update startTimer to check if game has started
         const startTimer = () => {
-            if (!timer.value) {
+            if (!timer.value && gameStarted.value) {
                 timer.value = setInterval(() => {
                     timeLeft.value--;
                     if (timeLeft.value <= 0) {
@@ -52,10 +61,18 @@ const app = createApp({
             }
         };
 
-        // Add skip handler
-        const handleSkip = () => {
-            timeLeft.value = Math.max(0, timeLeft.value - 5); // Reduce by 5 seconds instead of 10
-            loadNewWord();
+        // Add startGame function
+        const startGame = () => {
+            showWelcome.value = false;
+            gameStarted.value = true;
+            currentWord.definition = currentWord.definition || ''; // Show the previously hidden definition
+            startTimer();
+        };
+
+        // Update the handleSkip function to not reset streak
+        const handleSkip = async () => {
+            timeLeft.value = Math.max(0, timeLeft.value - 5);
+            await loadNewWord();  // Wait for word load to complete
         };
 
         // Computed properties
@@ -69,44 +86,58 @@ const app = createApp({
             return currentWord.word.length - revealedLetters.value.size;
         });
 
-        // Load a new word
+        // Update loadNewWord to always show word and definition
         const loadNewWord = async () => {
             try {
                 const response = await fetch('/api/words');
                 const data = await response.json();
                 
                 message.value = '';
-                currentWord.word = data.word;
-                currentWord.definition = data.definition;
+                currentWord.word = data.word.toLowerCase();
+                currentWord.definition = data.definition; // Always show definition
                 revealedLetters.value = new Set();
                 userInput.value = new Array(currentWord.word.length);
-                showModal.value = false;
+                // Remove showModal.value = false; from here
             } catch (error) {
-                console.error('Error loading word:', error);
+                console.error('Failed to fetch word:', error);
+                message.value = 'Failed to load new word';
+                messageType.value = 'message error visible';
             }
         };
 
-        // Handle virtual keyboard key press
+        // Fetch first word immediately and await it
+        (async () => {
+            await loadNewWord();
+        })();
+
+        // Update handleVirtualKeyPress to properly handle Enter case
         const handleVirtualKeyPress = (key) => {
-            if (!timer.value && /^[a-z]$/.test(key)) {
+            const lowercaseKey = key.toLowerCase();
+            
+            if (!timer.value && /^[a-z]$/.test(lowercaseKey)) {
                 startTimer(); // Start timer on first letter
             }
             
-            if (key === 'Backspace') {
-                handleBackspace();
-            } else if (key === 'Enter') {
-                if (allFilled.value) {
+            if (lowercaseKey === 'backspace') {
+                handleBackspace();w
+            } else if (lowercaseKey === 'enter') {
+                // Check if there are any inputs and if all inputs are filled
+                const inputs = document.querySelectorAll('.letter-input:not([disabled])');
+                const hasInputs = inputs.length > 0;
+                const allFilled = hasInputs && [...inputs].every(input => input.value.trim() !== '');
+                
+                if (allFilled) {
                     checkWord();
                 }
-            } else if (/^[a-z]$/.test(key)) {
+            } else if (/^[a-z]$/.test(lowercaseKey)) {
                 // Get all input elements and find first empty one
                 const inputs = document.querySelectorAll('.letter-input:not([disabled])');
                 const emptyInput = [...inputs].find(input => !input.value);
                 
                 if (emptyInput) {
                     const index = parseInt(emptyInput.dataset.index);
-                    emptyInput.value = key;
-                    userInput.value[index] = key;
+                    emptyInput.value = lowercaseKey;
+                    userInput.value[index] = lowercaseKey;
                     updateSubmitButton();
                 }
             }
@@ -143,7 +174,7 @@ const app = createApp({
             }
         };
 
-        // Check the guessed word
+        // Update checkWord function to only increment streak on correct answers
         const checkWord = () => {
             const fullGuess = [...currentWord.word].map((letter, index) => {
                 if (revealedLetters.value.has(index)) {
@@ -164,50 +195,59 @@ const app = createApp({
             guessCount.value++;
 
             if (fullGuess === word) {
-                // Start new timer only on correct guess
+                streak.value++;
+                timeLeft.value = 60;
+                clearInterval(timer.value);
+                timer.value = null;
                 startTimer();
-                // No points or streak tracking
                 
-                // Celebrate animation
+                // Celebrate animation and load new word ONCE
                 const inputs = document.querySelectorAll('.letter-input');
+                let isLoadingNewWord = false;  // Flag to prevent multiple loads
+
+                // Start celebration animation
                 inputs.forEach((input, i) => {
                     setTimeout(() => {
                         input.classList.add('celebrate');
                     }, i * 100);
                 });
 
-                // Clear inputs before loading next word
-                setTimeout(() => {
-                    inputs.forEach(input => {
-                        input.classList.remove('celebrate');
-                        input.value = '';
-                        input.disabled = false;
-                    });
-                    userInput.value = new Array(currentWord.word.length).fill(undefined);
-                    revealedLetters.value = new Set();
-                    
-                    // Load next word after clearing
-                    loadNewWord();
+                // Wait for celebration to finish, then load new word
+                setTimeout(async () => {
+                    if (!isLoadingNewWord) {
+                        isLoadingNewWord = true;
+                        
+                        // Remove celebration classes first
+                        inputs.forEach(input => {
+                            input.classList.remove('celebrate');
+                        });
+
+                        // Load new word and reset inputs
+                        await loadNewWord();
+                        inputs.forEach(input => {
+                            input.value = '';
+                            input.disabled = false;
+                        });
+                        userInput.value = new Array(currentWord.word.length).fill(undefined);
+                        revealedLetters.value = new Set();
+                    }
                 }, 1500);
             } else {
-                // Check each letter and mark correct ones
+                // Remove streak.value = 0; from here
+                
+                // Clear incorrect letters but keep correct ones
                 [...fullGuess].forEach((letter, index) => {
                     const input = document.querySelector(`.letter-input[data-index="${index}"]`);
                     if (letter === word[index]) {
                         input.classList.add('correct-position');
                         input.disabled = true;
                         revealedLetters.value.add(index);
+                    } else {
+                        input.value = '';
+                        userInput.value[index] = undefined;
                     }
                 });
                 
-                // Clear only incorrect letters
-                userInput.value = userInput.value.map((val, i) => {
-                    if (word[i] === val?.toLowerCase()) {
-                        return val;
-                    }
-                    return undefined;
-                });
-
                 shakeLetters();
             }
         };
@@ -229,11 +269,26 @@ const app = createApp({
 
         // End the round
         const endRound = () => {
+            clearInterval(timer.value);
+            timer.value = null;
             const inputs = document.querySelectorAll('.letter-input');
             inputs.forEach(input => input.disabled = true);
-            showMessage(`Round Over! The word was: ${currentWord.word}`, 'error');
             currentWord.word.split('').forEach((_, index) => revealedLetters.value.add(index));
-            showResults();
+            resultsText.value = getEmojiResults();
+            showModal.value = true; // Show the game over modal
+        };
+
+        // Update restartGame to reset streak
+        const restartGame = () => {
+            streak.value = 0; // Only reset streak when starting a new game
+            timeLeft.value = 60;
+            guessCount.value = 0;
+            revealCount.value = 0;
+            showModal.value = false;
+            showWelcome.value = true;
+            gameStarted.value = false;
+            timer.value = null;
+            loadNewWord();
         };
 
         // Shake letters animation
@@ -373,8 +428,15 @@ const app = createApp({
             }
         };
 
-        // Initialize the game
-        loadNewWord();
+        // Update keyboard event listener to handle Enter key properly
+        onMounted(() => {
+            document.addEventListener('keydown', (event) => {
+                const key = event.key;
+                if (key.match(/^[a-z]$/i) || key === 'Backspace' || key === 'Enter') {
+                    handleVirtualKeyPress(key);
+                }
+            });
+        });
 
         return {
             revealCount,
@@ -395,9 +457,14 @@ const app = createApp({
             copyResults,
             handleSkip,
             timeLeft,
-            formatTime
+            formatTime,
+            restartGame,
+            showWelcome,
+            startGame,
+            streak // Add streak to returned properties
         };
     }
 });
 
-app.mount('#app');
+// Mount the app and store the instance
+const vueApp = app.mount('#app');

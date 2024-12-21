@@ -165,6 +165,7 @@ h1 {
     background: rgba(0, 0, 0, 0.8);
     justify-content: center;
     align-items: center;
+    z-index: 1000; /* Ensure modal is above other elements */
 }
 
 .modal.show {
@@ -179,6 +180,13 @@ h1 {
     color: #d7dadc;
     width: 90%;
     max-width: 300px;
+    /* Add background color to prevent seeing through */
+    background-color: #1e1e1e;
+}
+
+.modal-content p {
+    margin: 15px 0;
+    line-height: 1.4;
 }
 
 .modal-buttons {
@@ -342,27 +350,55 @@ button, input {
 .stats {
     display: flex;
     justify-content: center;
+    gap: 8px;
     width: 100%;
-    padding: 10px;
-    font-family: 'Press Start 2P', cursive;
+    padding: 0 0 10px 0;
+    font-family: 'Arial', sans-serif;
+    font-size: 1.1em;
+    font-weight: bold;
+    color: #ffffff;
+}
+
+.timer, .streak {
+    background: transparent;
+    padding: 0;
+    border-radius: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 60px;
+}
+
+.timer span, .streak span {
     font-size: 0.8em;
+    color: #818384;
+    text-transform: uppercase;
+    margin-bottom: 2px;
+    font-weight: normal;
 }
 
-.timer {
-    background: #2a2a2b;
-    padding: 8px 16px;
-    border-radius: 4px;
+.timer-value, .streak-value {
+    font-size: 1.4em;
+    line-height: 1.2;
 }
 
-/* Remove unused styles */
-.score, .streak, .streak-pulse {
-    display: none;
+.timer-warning {
+    color: #ff4136;
 }
 
 @keyframes pulse {
     0% { transform: scale(1); }
-    50% { transform: scale(1.1); }
+    50% { transform: scale(1.05); }
     100% { transform: scale(1); }
+}
+
+.streak-value {
+    color: #6aaa64;
+}
+
+/* Remove unused styles */
+.score, .streak-pulse {
+    display: none;
 }
 
 @keyframes blink {
@@ -386,4 +422,11 @@ button, input {
     background-color: #6aaa64 !important;
     border-color: #6aaa64 !important;
     color: white !important;
+}
+
+.stats-container {
+    margin: 20px 0;
+    padding: 10px;
+    background: #2a2a2b;
+    border-radius: 5px;
 }

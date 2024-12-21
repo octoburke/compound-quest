@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, minimum-scale=1, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, user-scalable=no">
     <title>Word Guessing Game</title>
     <link rel="stylesheet" href="styles.css">
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
@@ -10,11 +10,28 @@
 </head>
 <body>
     <div id="app">
+        <!-- Add welcome modal -->
+        <div id="welcome-modal" class="modal" :class="{ show: showWelcome }">
+            <div class="modal-content">
+                <h2>Welcome to Word Quest!</h2>
+                <p>Guess words based on their definitions before time runs out.</p>
+                <p>You have 60 seconds to guess as many words as you can.</p>
+                <div class="modal-buttons">
+                    <button class="game-button submit" @click="startGame">Let's Go!</button>
+                </div>
+            </div>
+        </div>
+
         <div id="game-container">
             <div class="game-header">
                 <div class="stats">
                     <div class="timer" :class="{ 'timer-warning': timeLeft <= 10 }">
-                        {{ formatTime(timeLeft) }}
+                        <span>Time</span>
+                        <div class="timer-value">{{ formatTime(timeLeft) }}</div>
+                    </div>
+                    <div class="streak" v-if="streak > 0">
+                        <span>Streak</span>
+                        <div class="streak-value">{{ streak }}</div>
                     </div>
                 </div>
                 <h1>Word Quest</h1>
@@ -37,7 +54,7 @@
 
             <div class="action-buttons">
                 <button class="game-button skip" @click="handleSkip">Skip (-5s)</button>
-                <button class="game-button submit" @click="handleVirtualKeyPress('Enter')">Submit</button>
+                <button class="game-button submit" @click="checkWord">Submit</button>
             </div>
         </div>
         
@@ -56,10 +73,38 @@
             </div>
         </div>
 
+        <!-- Add game over modal -->
+        <div id="game-over-modal" class="modal" :class="{ show: showModal }">
+            <div class="modal-content">
+                <h2>Time's Up!</h2>
+                <p>The word was: <span class="answer-word">{{ currentWord.word }}</span></p>
+                <p>Definition: {{ currentWord.definition }}</p>
+                <div class="stats-container">
+                    <p>Words Guessed: {{ guessCount }}</p>
+                    <p>Hints Used: {{ revealCount }}</p>
+                </div>
+                <div class="modal-buttons">
+                    <button class="game-button submit" @click="restartGame">Play Again</button>
+                </div>
+            </div>
+        </div>
+
         <footer>
             <button id="ai-info-button" @click="showAboutModal = true">This was built by AI</button>
         </footer>
     </div>
     <script src="scripts.js"></script>
+    <script>
+        // Remove this mounting code since it's redundant and causing issues
+        /*
+        const vueApp = window.app.mount('#app');
+        document.addEventListener('keydown', (event) => {
+            const key = event.key.toLowerCase();
+            if (key.match(/^[a-z]$/) || key === 'backspace' || key === 'enter') {
+                vueApp.handleVirtualKeyPress(key);
+            }
+        });
+        */
+    </script>
 </body>
 </html>
