@@ -43,6 +43,19 @@ const app = createApp({
         const timeLeft = ref(60);
         const timer = ref(null);
 
+        // Add new game state variables
+        const score = ref(0);
+        const targetScore = ref(10); // Points needed to win
+        const isGameWon = ref(false);
+
+        // Simplify scoring constants
+        const POINTS = {
+            CORRECT: 1,     // Points for correct answer
+            WRONG: -1,      // Points for wrong answer
+            SKIP: -1,       // Points for skipping
+            TARGET: 10      // Points needed to win
+        };
+
         // Add utility functions
         const formatTime = (seconds) => {
             return `${Math.floor(seconds / 60)}:${(seconds % 60).toString().padStart(2, '0')}`;
@@ -71,7 +84,7 @@ const app = createApp({
 
         // Update the handleSkip function to not reset streak
         const handleSkip = async () => {
-            timeLeft.value = Math.max(0, timeLeft.value - 5);
+            score.value += POINTS.SKIP;
             await loadNewWord();  // Wait for word load to complete
         };
 
@@ -95,9 +108,10 @@ const app = createApp({
                 message.value = '';
                 currentWord.word = data.word.toLowerCase();
                 currentWord.definition = data.definition; // Always show definition
-                revealedLetters.value = new Set();
+                
+                // Reset revealed letters and automatically reveal first letter
+                revealedLetters.value = new Set([0]); // Add index 0 to reveal first letter
                 userInput.value = new Array(currentWord.word.length);
-                // Remove showModal.value = false; from here
             } catch (error) {
                 console.error('Failed to fetch word:', error);
                 message.value = 'Failed to load new word';
@@ -174,7 +188,7 @@ const app = createApp({
             }
         };
 
-        // Update checkWord function to only increment streak on correct answers
+        // Update checkWord function to fix animation timing
         const checkWord = () => {
             const fullGuess = [...currentWord.word].map((letter, index) => {
                 if (revealedLetters.value.has(index)) {
@@ -195,15 +209,24 @@ const app = createApp({
             guessCount.value++;
 
             if (fullGuess === word) {
+                // Simplify scoring - just add one point for correct answer
+                score.value += POINTS.CORRECT;
                 streak.value++;
+
+                // Check for win condition
+                if (score.value >= targetScore.value) {
+                    isGameWon.value = true;
+                    endRound();
+                    return;
+                }
+
                 timeLeft.value = 60;
                 clearInterval(timer.value);
                 timer.value = null;
                 startTimer();
                 
-                // Celebrate animation and load new word ONCE
                 const inputs = document.querySelectorAll('.letter-input');
-                let isLoadingNewWord = false;  // Flag to prevent multiple loads
+                let isLoadingNewWord = false;
 
                 // Start celebration animation
                 inputs.forEach((input, i) => {
@@ -212,28 +235,27 @@ const app = createApp({
                     }, i * 100);
                 });
 
-                // Wait for celebration to finish, then load new word
+                // Wait for celebration to finish, then clear and load new word
                 setTimeout(async () => {
                     if (!isLoadingNewWord) {
                         isLoadingNewWord = true;
                         
-                        // Remove celebration classes first
+                        // Clear inputs and remove celebration classes at the same time
                         inputs.forEach(input => {
                             input.classList.remove('celebrate');
-                        });
-
-                        // Load new word and reset inputs
-                        await loadNewWord();
-                        inputs.forEach(input => {
                             input.value = '';
                             input.disabled = false;
                         });
                         userInput.value = new Array(currentWord.word.length).fill(undefined);
                         revealedLetters.value = new Set();
+
+                        // Load new word after clearing everything
+                        await loadNewWord();
                     }
                 }, 1500);
             } else {
-                // Remove streak.value = 0; from here
+                streak.value = 0; // Reset streak on wrong guess
+                score.value += POINTS.WRONG; // Deduct point for wrong answer
                 
                 // Clear incorrect letters but keep correct ones
                 [...fullGuess].forEach((letter, index) => {
@@ -252,20 +274,8 @@ const app = createApp({
             }
         };
 
-        // Handle reveal letter button click
-        const handleRevealLetter = () => {
-            if (remainingLetters.value <= 1) return;
-            
-            // Find the first unrevealed letter
-            const firstUnrevealed = [...currentWord.word].findIndex((_, index) => 
-                !revealedLetters.value.has(index)
-            );
-            
-            if (firstUnrevealed !== -1) {
-                revealedLetters.value.add(firstUnrevealed);
-                revealCount.value++;
-            }
-        };
+        // Remove handleRevealLetter since we're simplifying the game
+        const handleRevealLetter = undefined;
 
         // End the round
         const endRound = () => {
@@ -274,12 +284,20 @@ const app = createApp({
             const inputs = document.querySelectorAll('.letter-input');
             inputs.forEach(input => input.disabled = true);
             currentWord.word.split('').forEach((_, index) => revealedLetters.value.add(index));
-            resultsText.value = getEmojiResults();
+            
+            // Show appropriate end game message
+            if (isGameWon.value) {
+                resultsText.value = "🎉 You Won! 🎉";
+            } else {
+                resultsText.value = "Game Over";
+            }
             showModal.value = true; // Show the game over modal
         };
 
         // Update restartGame to reset streak
         const restartGame = () => {
+            score.value = 0;
+            isGameWon.value = false;
             streak.value = 0; // Only reset streak when starting a new game
             timeLeft.value = 60;
             guessCount.value = 0;
@@ -453,7 +471,6 @@ const app = createApp({
             loadNewWord,
             handleVirtualKeyPress,
             checkWord,
-            handleRevealLetter,
             copyResults,
             handleSkip,
             timeLeft,
@@ -461,7 +478,11 @@ const app = createApp({
             restartGame,
             showWelcome,
             startGame,
-            streak // Add streak to returned properties
+            streak, // Add streak to returned properties
+            score,
+            targetScore,
+            isGameWon,
+            POINTS, // Add POINTS to expose scoring system to template
         };
     }
 });

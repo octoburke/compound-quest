@@ -15,7 +15,13 @@
             <div class="modal-content">
                 <h2>Welcome to Word Quest!</h2>
                 <p>Guess words based on their definitions before time runs out.</p>
-                <p>You have 60 seconds to guess as many words as you can.</p>
+                <p><strong>How to win:</strong></p>
+                <ul class="score-info">
+                    <li>First to {{ POINTS.TARGET }} points wins!</li>
+                    <li>+{{ POINTS.CORRECT }} point for correct word</li>
+                    <li>{{ POINTS.WRONG }} point for wrong guess</li>
+                    <li>{{ POINTS.SKIP }} point for skipping</li>
+                </ul>
                 <div class="modal-buttons">
                     <button class="game-button submit" @click="startGame">Let's Go!</button>
                 </div>
@@ -29,9 +35,18 @@
                         <span>Time</span>
                         <div class="timer-value">{{ formatTime(timeLeft) }}</div>
                     </div>
+                    <div class="score-display">
+                        <span>Progress</span>
+                        <div class="score-bar">
+                            <div class="score-progress" :style="{ width: Math.min(100, (score/targetScore) * 100) + '%' }"></div>
+                        </div>
+                        <div class="score-value" :class="{ 'near-target': score >= targetScore * 0.8 }">
+                            {{ score }}/{{ targetScore }}
+                        </div>
+                    </div>
                     <div class="streak" v-if="streak > 0">
                         <span>Streak</span>
-                        <div class="streak-value">{{ streak }}</div>
+                        <div class="streak-value">{{ streak }}x</div>
                     </div>
                 </div>
                 <h1>Word Quest</h1>
@@ -53,7 +68,7 @@
             </div>
 
             <div class="action-buttons">
-                <button class="game-button skip" @click="handleSkip">Skip (-5s)</button>
+                <button class="game-button skip" @click="handleSkip">Skip (-10pts)</button>
                 <button class="game-button submit" @click="checkWord">Submit</button>
             </div>
         </div>
@@ -76,12 +91,12 @@
         <!-- Add game over modal -->
         <div id="game-over-modal" class="modal" :class="{ show: showModal }">
             <div class="modal-content">
-                <h2>Time's Up!</h2>
-                <p>The word was: <span class="answer-word">{{ currentWord.word }}</span></p>
-                <p>Definition: {{ currentWord.definition }}</p>
+                <h2>{{ isGameWon ? '🎉 Congratulations! 🎉' : "Time's Up!" }}</h2>
+                <p v-if="!isGameWon">The word was: <span class="answer-word">{{ currentWord.word }}</span></p>
                 <div class="stats-container">
+                    <p>Final Score: {{ score }}/{{ targetScore }}</p>
                     <p>Words Guessed: {{ guessCount }}</p>
-                    <p>Hints Used: {{ revealCount }}</p>
+                    <p>Best Streak: {{ streak }}</p>
                 </div>
                 <div class="modal-buttons">
                     <button class="game-button submit" @click="restartGame">Play Again</button>

@@ -1,4 +1,5 @@
 const { app } = require('@azure/functions');
+const axios = require('axios');
 
 app.http('GetWords', {
     methods: ['GET'],
@@ -8,38 +9,47 @@ app.http('GetWords', {
         try {
             // Get random word from the words array
             const word = words[Math.floor(Math.random() * words.length)];
-            
-            // Call dictionary API
-            const response = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${word.toLowerCase()}`);
-            const data = await response.json();
 
-            if (!response.ok) {
-                throw new Error('Dictionary API error');
-            }
+            // OpenAI API key
+            const apiKey = process.env.OPENAI_API_KEY;
 
-            // Get the first definition we find
-            let definition = '';
-            for (const entry of data) {
-                for (const meaning of entry.meanings) {
-                    if (meaning.definitions && meaning.definitions.length > 0) {
-                        definition = meaning.definitions[0].definition;
-                        break;
-                    }
+
+            const prompt = `Your job is to provide a hint for a 5 letter word. Your hint should be easy. Response with only the text of the hint. The word is: ${word}`;
+
+            const response = await axios.post(
+                'https://api.openai.com/v1/chat/completions', // Updated endpoint
+                {
+                    model: 'gpt-3.5-turbo',
+                    messages: [
+                        {
+                            role: 'user',
+                            content: prompt
+                        }
+                    ],
+                    temperature: 0.7,
+                    max_tokens: 2000
+                },
+                {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${apiKey}`,
+                    },
                 }
-                if (definition) break;
-            }
+            );
+
+            const hint = response.data.choices[0].message.content;
 
             return {
                 jsonBody: {
-                    word: word,
-                    definition: definition
+                    word,
+                    definition: hint
                 }
             };
         } catch (error) {
             context.log('Error:', error);
             return {
                 status: 500,
-                jsonBody: { error: 'Failed to get word definition' }
+                jsonBody: { error: 'Failed to get word hint' }
             };
         }
     }
@@ -2329,4 +2339,4 @@ const words = [
     "ZEBRA",
     "ZESTY",
     "ZONAL"
-  ]
+]

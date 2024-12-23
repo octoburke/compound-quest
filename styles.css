@@ -350,9 +350,9 @@ button, input {
 .stats {
     display: flex;
     justify-content: center;
-    gap: 8px;
+    gap: 15px;
     width: 100%;
-    padding: 0 0 10px 0;
+    padding: 10px;
     font-family: 'Arial', sans-serif;
     font-size: 1.1em;
     font-weight: bold;
@@ -429,4 +429,73 @@ button, input {
     padding: 10px;
     background: #2a2a2b;
     border-radius: 5px;
+}
+
+.score-value {
+    color: #6aaa64;
+    font-size: 1.4em;
+    line-height: 1.2;
+}
+
+.score-value.near-target {
+    color: #ffd700;
+    animation: pulse 1s infinite;
+}
+
+.score-info {
+    text-align: left;
+    margin: 15px 0;
+    padding-left: 20px;
+    list-style-type: none;
+}
+
+.score-info li {
+    margin: 8px 0;
+    color: #d7dadc;
+}
+
+.score-info li:nth-child(1) { color: #ffd700; font-weight: bold; }
+.score-info li:nth-child(2) { color: #6aaa64; }
+.score-info li:nth-child(3) { color: #6aaa64; }
+.score-info li:nth-child(4) { color: #6aaa64; }
+.score-info li:nth-child(5) { color: #ff4136; }
+.score-info li:nth-child(6) { color: #ff4136; }
+
+.score-display {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 150px;
+}
+
+.score-bar {
+    width: 100%;
+    height: 8px;
+    background: #3a3a3c;
+    border-radius: 4px;
+    margin: 5px 0;
+    overflow: hidden;
+}
+
+.score-progress {
+    height: 100%;
+    background: #6aaa64;
+    transition: width 0.3s ease-out;
+}
+
+.score-progress.near-target {
+    background: #ffd700;
+    box-shadow: 0 0 10px #ffd700;
+}
+
+.score-value {
+    font-size: 1.2em;
+    font-weight: bold;
+}
+
+.score-display span {
+    font-size: 0.8em;
+    color: #818384;
+    text-transform: uppercase;
+    margin-bottom: 2px;
 }
