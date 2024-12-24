@@ -10,20 +10,22 @@
 </head>
 <body>
     <div id="app">
-        <!-- Add welcome modal -->
+        
         <div id="welcome-modal" class="modal" :class="{ show: showWelcome }">
             <div class="modal-content">
-                <h2>Welcome to Word Quest!</h2>
-                <p>Guess words based on their definitions before time runs out.</p>
+                <h2>Welcome to Compound Quest!</h2>
+                <p>Can you complete the compound word? Guess the missing part based on the definition.</p>
                 <p><strong>How to win:</strong></p>
                 <ul class="score-info">
-                    <li>First to {{ POINTS.TARGET }} points wins!</li>
-                    <li>+{{ POINTS.CORRECT }} point for correct word</li>
-                    <li>{{ POINTS.WRONG }} point for wrong guess</li>
-                    <li>{{ POINTS.SKIP }} point for skipping</li>
+                    <li>Get to {{ POINTS.TARGET }} points!</li>
+                    <li>+1 point for each correct word</li>
+                    <li>Unlimited hints available</li>
                 </ul>
                 <div class="modal-buttons">
-                    <button class="game-button submit" @click="startGame">Let's Go!</button>
+                    <button class="game-button submit" 
+                            @click="startGame">
+                        Let's Go!
+                    </button>
                 </div>
             </div>
         </div>
@@ -49,10 +51,25 @@
                         <div class="streak-value">{{ streak }}x</div>
                     </div>
                 </div>
-                <h1>Word Quest</h1>
+                <h1>Compound Quest</h1>
             </div>
             <div id="definition">{{ currentWord.definition }}</div>
-            <div id="partial-word" v-html="partialWord"></div>
+            <div class="word-area">
+                <template v-if="isLoading">
+                    <div class="word-area-loader">
+                        <div class="loading-spinner"></div>
+                        <div class="loading-text">Loading word...</div>
+                    </div>
+                </template>
+                <template v-else>
+                    <div class="word-container">
+                        <span class="word-part" v-if="showingPrefix">{{ currentCompound.prefix }}</span>
+                        <div id="partial-word" v-html="partialWord"></div>
+                        <span class="word-part" v-if="!showingPrefix">{{ currentCompound.suffix }}</span>
+                    </div>
+                    <p class="hint-text">Hint: {{ currentHint }}</p>
+                </template>
+            </div>
             
             <div id="keyboard">
                 <div class="keyboard-row">
@@ -68,7 +85,7 @@
             </div>
 
             <div class="action-buttons">
-                <button class="game-button skip" @click="handleSkip">Skip (-10pts)</button>
+                <button class="game-button skip" @click="handleSkip">Skip (-5s)</button>
                 <button class="game-button submit" @click="checkWord">Submit</button>
             </div>
         </div>
@@ -88,11 +105,15 @@
             </div>
         </div>
 
-        <!-- Add game over modal -->
         <div id="game-over-modal" class="modal" :class="{ show: showModal }">
             <div class="modal-content">
-                <h2>{{ isGameWon ? '🎉 Congratulations! 🎉' : "Time's Up!" }}</h2>
-                <p v-if="!isGameWon">The word was: <span class="answer-word">{{ currentWord.word }}</span></p>
+                <h2>{{ isGameWon ? '🎉 Congratulations! 🎉' : "Game Over!" }}</h2>
+                <p v-if="!isGameWon" class="answer-reveal">
+                    The complete word was: 
+                    <span class="answer-word">
+                        {{ currentCompound.prefix }}{{ currentCompound.suffix }}
+                    </span>
+                </p>
                 <div class="stats-container">
                     <p>Final Score: {{ score }}/{{ targetScore }}</p>
                     <p>Words Guessed: {{ guessCount }}</p>
@@ -109,17 +130,5 @@
         </footer>
     </div>
     <script src="scripts.js"></script>
-    <script>
-        // Remove this mounting code since it's redundant and causing issues
-        /*
-        const vueApp = window.app.mount('#app');
-        document.addEventListener('keydown', (event) => {
-            const key = event.key.toLowerCase();
-            if (key.match(/^[a-z]$/) || key === 'backspace' || key === 'enter') {
-                vueApp.handleVirtualKeyPress(key);
-            }
-        });
-        */
-    </script>
 </body>
 </html>
